@@ -1,40 +1,36 @@
 const cheerio = require("cheerio");
-const { toArray } = require("cheerio/lib/api/traversing");
 const Nightmare = require("nightmare");
-const { click, wait } = require("nightmare/lib/actions");
-const nightmare = Nightmare({ show: true, width: 1200, height: 1200 });
+const { click, evaluate } = require("nightmare/lib/actions");
+const { type } = require("os");
+const nightmare = Nightmare({ show: true, width: 1200, height: 900 });
 
-async function firstCar() {
+async function navigateToHomePage() {
   await nightmare
-    .goto("https://www.autoscout24.ro")
-    .click(".search-mask-refine-link")
-    .wait(1500)
-    .click("button.css-1xfaiyg")
-    .wait(2000);
+    .goto("https://pcgarage.ro/")
+    .type("#searchac", "gaming mouse")
+    .click("#sf2")
+    .wait(20000);
 
   const body = await nightmare.evaluate(() => document.body.innerHTML);
   const $ = cheerio.load(body);
 
-  const car = $(".css-qdkdg")
+  const mouses = $(".product_box")
     .map((index, elem) => {
-      const model = $(elem).find(".css-4u347z").text();
-      const mileage = $(elem).find(".css-147zjea").text();
-      const engineSize = $(elem).find(".css-h81uhl").text().trim();
-      const price = $(elem).find(".css-113e8xo").text();
-      const year = $(elem).find(".css-147zjea").text();
+      const title = $(elem).find(".my-0").text();
+      const link = $(elem).find(".my-0 a").attr("href");
+      const price = $(elem).find(".price").text();
+      const sells = $(elem).find(".prefs_sort").text().trim();
 
       return {
-        model,
-        mileage,
-        engineSize,
+        title,
+        link,
         price,
-        year,
+        sells,
       };
     })
     .toArray();
 
-  console.log(car);
+  console.log(mouses);
 }
 
-firstCar();
-
+navigateToHomePage();
