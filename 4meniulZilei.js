@@ -14,23 +14,32 @@ async function menu() {
   const meniulZilei = $(".box")
     .map((index, elem) => {
       const restaurantName = $(elem).find(".title").text();
-      const menuList = $(elem).find(".boxContent ul li").text();
+      const menuList = $(elem)
+        .find(".boxContent ul li")
+        .map((_index, _elem) => {
+          return $(_elem).text();
+        })
+        .toArray();
       const price = $(elem).find(".priceBadge").text().trim();
-      const phoneNumber = $(elem).find("td span").text();
-      const delivery = $(elem).find("td sup").text();
+      let phoneNumber = $(elem).find("td span[title]").text();
+      let delivery = $(elem).find("td sup");
 
-      const isDelivery = () => {
-        if (!delivery.length) {
-          console.log("there is no delivery");
-        }
-      };
+      let phoneNumbers = [];
+      if (!phoneNumber.length) {
+        phoneNumbers = "no phone number";
+      } else {
+        const regex = /\d+\s-\s\d+\s\d+/g;
+        phoneNumbers = phoneNumber.match(regex);
+      }
+
+      delivery = delivery.length ? true : false;
 
       return {
         restaurantName,
         menuList,
         price,
-        phoneNumber,
-        isDelivery()
+        phoneNumbers,
+        delivery,
       };
     })
     .toArray();
@@ -39,3 +48,4 @@ async function menu() {
 }
 
 menu();
+
