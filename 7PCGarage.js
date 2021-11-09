@@ -5,48 +5,15 @@
 //download the invoice as a pdf, using requests(xhr)
 
 const cheerio = require("cheerio");
+const { compareDocumentPosition } = require("domutils");
 const Nightmare = require("nightmare");
-const { click } = require("nightmare/lib/actions");
+const { click, wait } = require("nightmare/lib/actions");
 const nightmare = Nightmare({ show: true, width: 1300, height: 900 });
 
 const match = /Sergiu/g;
+const info = [];
 
-// async function PcGarage() {
-//   async function navigate() {
-//     await nightmare
-//       .goto("https://auth.emag.ro/user/login")
-//       .wait("#user_login_email")
-//       .type("#user_login_email", "diablo201888@gmail.com")
-//       .click("#user_login_continue")
-//       .wait(20000)
-//       .wait("#user_login_password")
-//       .type("#user_login_password", "Test2018")
-//       .click("#user_login_continue")
-//       .wait(20000);
-//   }
-
-//   const body = nightmare.evaluate(() => document.body.innerHTML);
-//   const $ = cheerio.load(body);
-
-//   const checkAccount = $(".panel-body:first")
-//     .map((index, elem) => {
-//       const logout = $(elem).find(".field-value:first").text().trim();
-
-//       const checkName = () => {
-//         return match.test(logout)
-//           ? console.log("is logged in")
-//           : console.log("is logged out");
-//       };
-//       checkName();
-//       return {
-//         logout,
-//       };
-//     })
-//     .toArray();
-//   console.log(checkAccount);
-// }
-
-async function navigate() {
+async function PcGarage() {
   await nightmare
     .goto("https://auth.emag.ro/user/login")
     .wait("#user_login_email")
@@ -56,33 +23,60 @@ async function navigate() {
     .wait("#user_login_password")
     .type("#user_login_password", "Test2018")
     .click("#user_login_continue")
-    .wait(20000)
-    .catch((end) => {
-      console.log(end);
-    });
+    .wait(25000);
 
-  function target() {
-    const body = nightmare.evaluate(() => document.body.innerHTML);
+  const body = await nightmare.evaluate(() => document.body.innerHTML);
+  const $ = cheerio.load(body);
+
+  const checkAccount = $(".panel-body:first")
+    .map((index, elem) => {
+      const user = $(elem).find(".field-value:first").text();
+
+      const checkName = () => {
+        return match.test(user)
+          ? console.log("is logged in")
+          : console.log("is logged out");
+      };
+      checkName();
+      return {
+        user,
+      };
+    })
+    .toArray();
+  console.log(checkAccount);
+
+  async function history() {
+    await nightmare
+      .goto("https://www.emag.ro/history/shopping?ref=ua_order_history")
+      .wait(10000);
+    // .click(".full-white-button");
+
+    const body = await nightmare.evaluate(() => document.body.innerHTML);
     const $ = cheerio.load(body);
 
-    const checkAccount = $(".panel-body:first")
+    const scrapeOrders = $(".order-hist-box")
       .map((index, elem) => {
-        const logout = $(elem).find(".field-value:first").text().trim();
+        const nrComanda = $(elem).find(".gtm_6x2itw").text().trim();
+        const dataTime = $(elem).find(".order-date").text().trim();
+        const valoare = $(elem).find(".money-int").text().trim();
+        const link = $(elem).find(".order-head.clearfix > a").attr("href");
 
-        const checkName = () => {
-          return match.test(logout)
-            ? console.log("is logged in")
-            : console.log("is logged out");
-        };
-        checkName();
         return {
-          logout,
+          nrComanda,
+          dataTime,
+          valoare,
+          link,
         };
       })
       .toArray();
+    console.log(scrapeOrders);
+    info.push(scrapeOrders);
   }
+  history();
 
-  target();
+  async function downloadInfo() {
+    
+  }
 }
 
-navigate();
+PcGarage();
