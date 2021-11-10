@@ -1,17 +1,16 @@
-//login to the login page site
-//check with regex if i'm logged in
-//go to order history
-//scrape "comanda, valoare, etc" and store to an array of ojects
-//download the invoice as a pdf, using requests(xhr)
-
 const cheerio = require("cheerio");
+const { jsPDF } = require("jspdf");
 const { compareDocumentPosition } = require("domutils");
 const Nightmare = require("nightmare");
 const { click, wait } = require("nightmare/lib/actions");
+const axios = require("axios");
 const nightmare = Nightmare({ show: true, width: 1300, height: 900 });
+const screenshotSelector = require("nightmare-screenshot-selector");
+const fs = require("fs");
 
 const match = /Sergiu/g;
 const info = [];
+const doc = new jsPDF();
 
 async function PcGarage() {
   await nightmare
@@ -49,7 +48,6 @@ async function PcGarage() {
     await nightmare
       .goto("https://www.emag.ro/history/shopping?ref=ua_order_history")
       .wait(10000);
-    // .click(".full-white-button");
 
     const body = await nightmare.evaluate(() => document.body.innerHTML);
     const $ = cheerio.load(body);
@@ -70,13 +68,52 @@ async function PcGarage() {
       })
       .toArray();
     console.log(scrapeOrders);
-    info.push(scrapeOrders);
+    const infoPDF = info.push(scrapeOrders);
+
+    console.log(info);
+
+    async function factura() {
+      await nightmare
+        .click(
+          "#emg-body-overlay > div.main-container-inner > div.emg-container > div > div.user-account-content.page-container > div > div > ul > li:nth-child(3) > div.order-head.clearfix > a"
+        )
+        .wait(2000);
+      const body = await nightmare.evaluate(() => document.body.innerHTML);
+      const $ = cheerio.load(body);
+
+      const orderList = $(".order-details-box.last").map((index, elem) => {
+        const isFactura = $(elem)
+          .find(".full-white-button.full-width-spread")
+          .text();
+
+        if (isFactura.length) {
+          goToFactura();
+          console.log("exists");
+        } else {
+          makeScreenshot();
+          console.log("not exists");
+        }
+        console.log(isFactura);
+        return isFactura;
+      });
+    }
+    factura();
   }
   history();
-
-  async function downloadInfo() {
-    
-  }
 }
 
 PcGarage();
+
+async function goToFactura() {
+  await nightmare.click(".full-white-button.full-width-spread").wait(2000);
+}
+
+async function makeScreenshot() {
+  await nightmare
+    .click(".full-white-button.full-width-spread")
+    .wait(2000)
+    .screenshotSelector(".account_holder")
+    .then(function (data) {
+      fs.writeFileSync("screen.png", data);
+    });
+}
